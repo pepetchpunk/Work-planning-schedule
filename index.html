@@ -78,7 +78,8 @@
         ListTodo: '<rect x="3" y="5" width="6" height="6" rx="1"/><path d="m3 17 2 2 4-4"/><path d="M13 6h8"/><path d="M13 12h8"/><path d="M13 18h8"/>',
         User: '<path d="M19 21v-2a4 4 0 0 0-4-4H9a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/>',
         CheckSquare: '<polyline points="9 11 12 14 22 4"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/>',
-        Trash: '<path d="M3 6h18"/><path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6"/><path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2"/><line x1="10" x2="10" y1="11" y2="17"/><line x1="14" x2="14" y1="11" y2="17"/>'
+        Trash: '<path d="M3 6h18"/><path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6"/><path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2"/><line x1="10" x2="10" y1="11" y2="17"/><line x1="14" x2="14" y1="11" y2="17"/>',
+        GripVertical: '<circle cx="9" cy="12" r="1"/><circle cx="9" cy="5" r="1"/><circle cx="9" cy="19" r="1"/><circle cx="15" cy="12" r="1"/><circle cx="15" cy="5" r="1"/><circle cx="15" cy="19" r="1"/>'
       };
       return (
         <svg xmlns="http://www.w3.org/2000/svg" width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className} dangerouslySetInnerHTML={{ __html: icons[name] }} {...props} />
@@ -101,6 +102,7 @@
     const User = (p) => <Icon name="User" {...p} />;
     const CheckSquare = (p) => <Icon name="CheckSquare" {...p} />;
     const Trash = (p) => <Icon name="Trash" {...p} />;
+    const GripVertical = (p) => <Icon name="GripVertical" {...p} />;
 
     // --- Constants & Data ---
     const ACTIVITIES = [
@@ -138,6 +140,10 @@
       const [isDayViewOpen, setIsDayViewOpen] = useState(false);
       const [selectedDayString, setSelectedDayString] = useState('');
       
+      // Drag & Drop State
+      const [dragItemInfo, setDragItemInfo] = useState(null);
+      const [dragOverInfo, setDragOverInfo] = useState(null);
+
       // Modal States for Add/Delete
       const [isDeleteMonthModalOpen, setIsDeleteMonthModalOpen] = useState(false);
       const [deleteMonthText, setDeleteMonthText] = useState('');
@@ -240,6 +246,60 @@
           unsubscribeDeps();
         };
       }, [isFirebaseLoaded]);
+
+      // --- Drag and Drop Handlers ---
+      const handleDragStart = (e, dept, memberIndex) => {
+        setDragItemInfo({ dept, memberIndex });
+        if (e.dataTransfer) {
+          e.dataTransfer.effectAllowed = "move";
+          e.dataTransfer.setData("text/plain", memberIndex);
+        }
+      };
+
+      const handleDragOver = (e, dept, memberIndex) => {
+        e.preventDefault(); // allow drop
+        if (e.dataTransfer) e.dataTransfer.dropEffect = "move";
+        if (dragItemInfo && dragItemInfo.dept === dept) {
+          setDragOverInfo({ dept, memberIndex });
+        }
+      };
+
+      const handleDrop = async (e, dept) => {
+        e.preventDefault();
+        if (!dragItemInfo || !dragOverInfo) return;
+        if (dragItemInfo.dept !== dragOverInfo.dept || dragItemInfo.dept !== dept) return;
+        
+        const sourceIndex = dragItemInfo.memberIndex;
+        const targetIndex = dragOverInfo.memberIndex;
+        
+        if (sourceIndex !== targetIndex) {
+           const updatedMembers = [...departments[dept]];
+           const [movedItem] = updatedMembers.splice(sourceIndex, 1);
+           updatedMembers.splice(targetIndex, 0, movedItem);
+
+           // Optimistic Update
+           setDepartments(prev => ({...prev, [dept]: updatedMembers}));
+
+           // Firebase Save
+           if (isFirebaseLoaded) {
+              const { updateDoc, doc } = window.firebaseAPI;
+              try {
+                await updateDoc(doc(window.firebaseDB, "departments", dept), { 
+                  members: updatedMembers 
+                });
+              } catch (error) {
+                console.error("Error updating member order:", error);
+              }
+           }
+        }
+        setDragItemInfo(null);
+        setDragOverInfo(null);
+      };
+
+      const handleDragEnd = () => {
+        setDragItemInfo(null);
+        setDragOverInfo(null);
+      };
 
       // --- Department Management Logic ---
       
@@ -626,24 +686,47 @@
                     </div>
                   </h3>
                   <div className="space-y-1">
-                    {members.map(name => (
-                      <div key={name} className={`group flex items-center justify-between px-4 py-2 rounded-lg transition-colors ${selectedUser === name ? 'bg-[#0b3d1b]/10 text-[#0b3d1b] dark:bg-[#0b3d1b]/40 dark:text-[#4ade80] font-medium' : 'hover:bg-gray-100 dark:hover:bg-gray-800 text-gray-600 dark:text-gray-400'}`}>
-                        <button
-                          onClick={() => { setSelectedUser(name); setIsSidebarOpen(false); }}
-                          className="flex-1 flex items-center text-left"
+                    {members.map((name, idx) => {
+                      const isDragging = dragItemInfo?.dept === dept && dragItemInfo?.memberIndex === idx;
+                      const isDragOver = dragOverInfo?.dept === dept && dragOverInfo?.memberIndex === idx;
+                      
+                      let borderClass = '';
+                      if (isDragOver && !isDragging) {
+                        borderClass = dragItemInfo?.memberIndex < idx 
+                          ? 'border-b-2 border-[#0b3d1b] dark:border-[#4ade80]' 
+                          : 'border-t-2 border-[#0b3d1b] dark:border-[#4ade80]';
+                      }
+
+                      return (
+                        <div 
+                          key={name} 
+                          draggable
+                          onDragStart={(e) => handleDragStart(e, dept, idx)}
+                          onDragOver={(e) => handleDragOver(e, dept, idx)}
+                          onDrop={(e) => handleDrop(e, dept)}
+                          onDragEnd={handleDragEnd}
+                          className={`group flex items-center justify-between px-3 py-2 rounded-lg transition-colors cursor-grab active:cursor-grabbing ${selectedUser === name ? 'bg-[#0b3d1b]/10 text-[#0b3d1b] dark:bg-[#0b3d1b]/40 dark:text-[#4ade80] font-medium' : 'hover:bg-gray-100 dark:hover:bg-gray-800 text-gray-600 dark:text-gray-400'} ${isDragging ? 'opacity-50' : ''} ${borderClass}`}
                         >
-                          <div className={`w-2 h-2 rounded-full mr-3 ${selectedUser === name ? 'bg-[#0b3d1b]' : 'bg-gray-300 dark:bg-gray-600'}`}></div>
-                          <span className="truncate">{name}</span>
-                        </button>
-                        <button 
-                          onClick={(e) => { e.stopPropagation(); openDeleteMemberModal(dept, name); }} 
-                          className="p-1 text-gray-400 hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-900/30 rounded transition-colors"
-                          title={`ลบพนักงาน ${name}`}
-                        >
-                          <X size={14} />
-                        </button>
-                      </div>
-                    ))}
+                          <div className="flex items-center flex-1 overflow-hidden">
+                            <GripVertical size={14} className="text-gray-400 mr-1.5 opacity-0 group-hover:opacity-100 transition-opacity shrink-0" />
+                            <button
+                              onClick={() => { setSelectedUser(name); setIsSidebarOpen(false); }}
+                              className="flex-1 flex items-center text-left truncate"
+                            >
+                              <div className={`shrink-0 w-2 h-2 rounded-full mr-2.5 ${selectedUser === name ? 'bg-[#0b3d1b]' : 'bg-gray-300 dark:bg-gray-600'}`}></div>
+                              <span className="truncate">{name}</span>
+                            </button>
+                          </div>
+                          <button 
+                            onClick={(e) => { e.stopPropagation(); openDeleteMemberModal(dept, name); }} 
+                            className="p-1 text-gray-400 hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-900/30 rounded transition-colors shrink-0 ml-1"
+                            title={`ลบพนักงาน ${name}`}
+                          >
+                            <X size={14} />
+                          </button>
+                        </div>
+                      );
+                    })}
                     {members.length === 0 && (
                       <div className="px-4 py-2 text-xs text-gray-400 italic">ไม่มีพนักงาน</div>
                     )}
