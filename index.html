@@ -1,0 +1,1427 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>ตารางวางแผนการทำงาน</title>
+  
+  <!-- Open Graph / Preview Image -->
+  <meta property="og:title" content="ตารางวางแผนการทำงาน" />
+  <meta property="og:image" content="https://lh3.googleusercontent.com/d/1gsvjcNlFaid1GcusnG8QgdxTh4FwMHOz" />
+  <meta name="twitter:card" content="summary_large_image" />
+  <meta name="twitter:image" content="https://lh3.googleusercontent.com/d/1gsvjcNlFaid1GcusnG8QgdxTh4FwMHOz" />
+
+  <!-- Tailwind CSS -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = {
+      darkMode: 'class',
+    }
+  </script>
+
+  <!-- React & ReactDOM -->
+  <script src="https://unpkg.com/react@18/umd/react.development.js" crossorigin></script>
+  <script src="https://unpkg.com/react-dom@18/umd/react-dom.development.js" crossorigin></script>
+  
+  <!-- Babel for compiling JSX in the browser -->
+  <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+
+  <!-- Firebase Setup -->
+  <script type="module">
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/12.10.0/firebase-app.js";
+    import { getAnalytics } from "https://www.gstatic.com/firebasejs/12.10.0/firebase-analytics.js";
+    import { getFirestore, collection, onSnapshot, addDoc, updateDoc, deleteDoc, doc, setDoc } from "https://www.gstatic.com/firebasejs/12.10.0/firebase-firestore.js";
+
+    const firebaseConfig = {
+      apiKey: "AIzaSyBzjvRSnUcaRRNG_nxoo2b_FRS81MhU_Bo",
+      authDomain: "startup-up.firebaseapp.com",
+      projectId: "startup-up",
+      storageBucket: "startup-up.firebasestorage.app",
+      messagingSenderId: "818763745889",
+      appId: "1:818763745889:web:76db32bd12f11a7b517820",
+      measurementId: "G-KJ7S2RP9KF"
+    };
+
+    // Initialize Firebase
+    const app = initializeApp(firebaseConfig);
+    const analytics = getAnalytics(app);
+    const db = getFirestore(app);
+
+    // ส่งต่อฟังก์ชันของ Firebase ให้กับ React ผ่าน window object
+    window.firebaseDB = db;
+    window.firebaseAPI = { collection, onSnapshot, addDoc, updateDoc, deleteDoc, doc, setDoc };
+    window.dispatchEvent(new Event('firebaseLoaded'));
+  </script>
+</head>
+<body>
+  <div id="root"></div>
+
+  <script type="text/babel">
+    const { useState, useEffect } = React;
+    
+    // --- SVG Icons Components ---
+    const Icon = ({ name, size = 24, className = '', ...props }) => {
+      const icons = {
+        ChevronLeft: '<path d="m15 18-6-6 6-6"/>',
+        ChevronRight: '<path d="m9 18 6-6-6-6"/>',
+        Menu: '<line x1="4" x2="20" y1="12" y2="12"/><line x1="4" x2="20" y1="6" y2="6"/><line x1="4" x2="20" y1="18" y2="18"/>',
+        X: '<path d="M18 6 6 18"/><path d="m6 6 12 12"/>',
+        Sun: '<circle cx="12" cy="12" r="4"/><path d="M12 2v2"/><path d="M12 20v2"/><path d="m4.93 4.93 1.41 1.41"/><path d="m17.66 17.66 1.41 1.41"/><path d="M2 12h2"/><path d="M20 12h2"/><path d="m6.34 17.66-1.41 1.41"/><path d="m19.07 4.93-1.41 1.41"/>',
+        Moon: '<path d="M12 3a6 6 0 0 0 9 9 9 9 0 1 1-9-9Z"/>',
+        Plus: '<path d="M5 12h14"/><path d="M12 5v14"/>',
+        CalendarIcon: '<path d="M8 2v4"/><path d="M16 2v4"/><rect width="18" height="18" x="3" y="4" rx="2"/><path d="M3 10h18"/>',
+        MapPin: '<path d="M20 10c0 6-8 12-8 12s-8-6-8-12a8 8 0 0 1 16 0Z"/><circle cx="12" cy="10" r="3"/>',
+        FileSignature: '<path d="M20 19.5v.5a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h5.5"/><path d="M8 18h1"/><path d="M18.4 9.6a2 2 0 1 1 3 3L17 17l-4 1 1-4Z"/>',
+        Home: '<path d="m3 9 9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/>',
+        Video: '<path d="m22 8-6 4 6 4V8Z"/><rect width="14" height="12" x="2" y="6" rx="2" ry="2"/>',
+        ListTodo: '<rect x="3" y="5" width="6" height="6" rx="1"/><path d="m3 17 2 2 4-4"/><path d="M13 6h8"/><path d="M13 12h8"/><path d="M13 18h8"/>',
+        User: '<path d="M19 21v-2a4 4 0 0 0-4-4H9a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/>',
+        CheckSquare: '<polyline points="9 11 12 14 22 4"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/>',
+        Trash: '<path d="M3 6h18"/><path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6"/><path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2"/><line x1="10" x2="10" y1="11" y2="17"/><line x1="14" x2="14" y1="11" y2="17"/>'
+      };
+      return (
+        <svg xmlns="http://www.w3.org/2000/svg" width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className} dangerouslySetInnerHTML={{ __html: icons[name] }} {...props} />
+      );
+    };
+    
+    const ChevronLeft = (p) => <Icon name="ChevronLeft" {...p} />;
+    const ChevronRight = (p) => <Icon name="ChevronRight" {...p} />;
+    const Menu = (p) => <Icon name="Menu" {...p} />;
+    const X = (p) => <Icon name="X" {...p} />;
+    const Sun = (p) => <Icon name="Sun" {...p} />;
+    const Moon = (p) => <Icon name="Moon" {...p} />;
+    const Plus = (p) => <Icon name="Plus" {...p} />;
+    const CalendarIcon = (p) => <Icon name="CalendarIcon" {...p} />;
+    const MapPin = (p) => <Icon name="MapPin" {...p} />;
+    const FileSignature = (p) => <Icon name="FileSignature" {...p} />;
+    const Home = (p) => <Icon name="Home" {...p} />;
+    const Video = (p) => <Icon name="Video" {...p} />;
+    const ListTodo = (p) => <Icon name="ListTodo" {...p} />;
+    const User = (p) => <Icon name="User" {...p} />;
+    const CheckSquare = (p) => <Icon name="CheckSquare" {...p} />;
+    const Trash = (p) => <Icon name="Trash" {...p} />;
+
+    // --- Constants & Data ---
+    const ACTIVITIES = [
+      'เปิดบ้าน', 
+      'เซ็นสัญญายื่นสินกู้', 
+      'เซ็นสัญญารับบ้าน', 
+      'ถ่ายคลิปหรือคอนเทนต์', 
+      'อื่นๆ'
+    ];
+
+    const MONTHS_TH = [
+      'มกราคม', 'กุมภาพันธ์', 'มีนาคม', 'เมษายน', 'พฤษภาคม', 'มิถุนายน',
+      'กรกฎาคม', 'สิงหาคม', 'กันยายน', 'ตุลาคม', 'พฤศจิกายน', 'ธันวาคม'
+    ];
+    const DAYS_TH = ['จ.', 'อ.', 'พ.', 'พฤ.', 'ศ.', 'ส.', 'อา.'];
+
+    // Generate hours and minutes for dropdowns
+    const HOURS = Array.from({ length: 24 }, (_, i) => i.toString().padStart(2, '0'));
+    const MINUTES = Array.from({ length: 60 }, (_, i) => i.toString().padStart(2, '0'));
+
+    function App() {
+      // --- State ---
+      const [currentDate, setCurrentDate] = useState(new Date());
+      const [events, setEvents] = useState([]);
+      const [departments, setDepartments] = useState({
+        'Marketing': ['Peth', 'Beau', 'Noey', 'Ketar', 'Perth', 'Ter'],
+        'Sale': ['Boom', 'May', 'Boat']
+      });
+      const [selectedUser, setSelectedUser] = useState('All');
+      const [isDarkMode, setIsDarkMode] = useState(false);
+      const [isSidebarOpen, setIsSidebarOpen] = useState(false);
+      const [isModalOpen, setIsModalOpen] = useState(false);
+      const [editingEventId, setEditingEventId] = useState(null);
+      const [isDayViewOpen, setIsDayViewOpen] = useState(false);
+      const [selectedDayString, setSelectedDayString] = useState('');
+      
+      // Modal States for Add/Delete
+      const [isDeleteMonthModalOpen, setIsDeleteMonthModalOpen] = useState(false);
+      const [deleteMonthText, setDeleteMonthText] = useState('');
+      const [isDeleteEventConfirmOpen, setIsDeleteEventConfirmOpen] = useState(false);
+
+      // Dept & Member Modal States
+      const [isAddDeptModalOpen, setIsAddDeptModalOpen] = useState(false);
+      const [newDeptName, setNewDeptName] = useState('');
+      const [isAddMemberModalOpen, setIsAddMemberModalOpen] = useState(false);
+      const [targetDeptForMember, setTargetDeptForMember] = useState('');
+      const [newMemberName, setNewMemberName] = useState('');
+      
+      const [isDeleteDeptModalOpen, setIsDeleteDeptModalOpen] = useState(false);
+      const [deptToDelete, setDeptToDelete] = useState('');
+      const [deleteDeptText, setDeleteDeptText] = useState('');
+
+      const [isDeleteMemberModalOpen, setIsDeleteMemberModalOpen] = useState(false);
+      const [memberToDelete, setMemberToDelete] = useState('');
+      const [deptOfMemberToDelete, setDeptOfMemberToDelete] = useState('');
+      const [deleteMemberText, setDeleteMemberText] = useState('');
+
+      // Firebase State
+      const [isFirebaseLoaded, setIsFirebaseLoaded] = useState(false);
+
+      // Form State
+      const [formData, setFormData] = useState({
+        type: 'event', // 'event', 'holiday', or 'leave'
+        date: '',
+        hour: '09',
+        minute: '00',
+        activity: ACTIVITIES[0],
+        note: '',
+        assignee: ''
+      });
+
+      // --- Theme Effect ---
+      useEffect(() => {
+        if (isDarkMode) {
+          document.documentElement.classList.add('dark');
+        } else {
+          document.documentElement.classList.remove('dark');
+        }
+      }, [isDarkMode]);
+
+      // --- Firebase Effect (Realtime Listen) ---
+      useEffect(() => {
+        if (window.firebaseDB) {
+          setIsFirebaseLoaded(true);
+        } else {
+          const handleLoad = () => setIsFirebaseLoaded(true);
+          window.addEventListener('firebaseLoaded', handleLoad);
+          return () => window.removeEventListener('firebaseLoaded', handleLoad);
+        }
+      }, []);
+
+      useEffect(() => {
+        if (!isFirebaseLoaded) return;
+
+        const { collection, onSnapshot, setDoc, doc } = window.firebaseAPI;
+        
+        // Listen to 'events'
+        const unsubscribeEvents = onSnapshot(collection(window.firebaseDB, "events"), (snapshot) => {
+          const loadedEvents = [];
+          snapshot.forEach((doc) => {
+            loadedEvents.push({ id: doc.id, ...doc.data() });
+          });
+          setEvents(loadedEvents);
+        });
+
+        // Listen to 'departments'
+        const unsubscribeDeps = onSnapshot(collection(window.firebaseDB, "departments"), (snapshot) => {
+          if (snapshot.empty) {
+            // Initialize with default departments if empty
+            const initial = {
+              'Marketing': ['Peth', 'Beau', 'Noey', 'Ketar', 'Perth', 'Ter'],
+              'Sale': ['Boom', 'May', 'Boat']
+            };
+            Object.keys(initial).forEach(async (key, idx) => {
+              try {
+                await setDoc(doc(window.firebaseDB, "departments", key), { members: initial[key], order: idx });
+              } catch(e) {
+                console.error("Initialize Dept Error:", e);
+              }
+            });
+          } else {
+            const loadedDeps = {};
+            const depsArray = [];
+            snapshot.forEach((d) => {
+              depsArray.push({ id: d.id, ...d.data() });
+            });
+            depsArray.sort((a, b) => (a.order || 0) - (b.order || 0)).forEach(d => {
+              loadedDeps[d.id] = d.members || [];
+            });
+            setDepartments(loadedDeps);
+          }
+        });
+
+        return () => {
+          unsubscribeEvents();
+          unsubscribeDeps();
+        };
+      }, [isFirebaseLoaded]);
+
+      // --- Department Management Logic ---
+      
+      // Add Dept
+      const openAddDeptModal = () => {
+        setNewDeptName('');
+        setIsAddDeptModalOpen(true);
+      };
+      
+      const confirmAddDepartment = async () => {
+        if (!newDeptName || !newDeptName.trim()) return;
+        const name = newDeptName.trim();
+        
+        if (departments[name]) {
+          alert('มีชื่อทีมนี้อยู่แล้วครับ!');
+          return;
+        }
+
+        if (isFirebaseLoaded) {
+          const { setDoc, doc } = window.firebaseAPI;
+          try {
+            await setDoc(doc(window.firebaseDB, "departments", name), { 
+              members: [], 
+              order: Object.keys(departments).length 
+            });
+            setIsAddDeptModalOpen(false);
+          } catch (error) {
+            console.error("Error adding department:", error);
+            alert("เพิ่มทีมไม่สำเร็จ กรุณาตรวจสอบการเชื่อมต่อ");
+          }
+        }
+      };
+
+      // Add Member
+      const openAddMemberModal = (deptName) => {
+        setTargetDeptForMember(deptName);
+        setNewMemberName('');
+        setIsAddMemberModalOpen(true);
+      };
+
+      const confirmAddMember = async () => {
+        if (!newMemberName || !newMemberName.trim()) return;
+        const name = newMemberName.trim();
+        const deptName = targetDeptForMember;
+        
+        if (departments[deptName] && departments[deptName].includes(name)) {
+          alert('มีรายชื่อพนักงานคนนี้อยู่แล้วครับ!');
+          return;
+        }
+
+        const currentMembers = departments[deptName] || [];
+        const updatedMembers = [...currentMembers, name];
+        
+        if (isFirebaseLoaded) {
+          const { updateDoc, doc } = window.firebaseAPI;
+          try {
+            await updateDoc(doc(window.firebaseDB, "departments", deptName), { 
+              members: updatedMembers 
+            });
+            setIsAddMemberModalOpen(false);
+          } catch (error) {
+            console.error("Error adding member:", error);
+            alert("เพิ่มพนักงานไม่สำเร็จ กรุณาตรวจสอบการเชื่อมต่อ");
+          }
+        }
+      };
+
+      // Delete Dept
+      const openDeleteDeptModal = (deptName) => {
+        setDeptToDelete(deptName);
+        setDeleteDeptText('');
+        setIsDeleteDeptModalOpen(true);
+      };
+
+      const confirmDeleteDepartment = async () => {
+        if (deleteDeptText !== 'Delete') return;
+        const deptName = deptToDelete;
+        
+        if (isFirebaseLoaded) {
+          const { doc, deleteDoc } = window.firebaseAPI;
+          try {
+            await deleteDoc(doc(window.firebaseDB, "departments", deptName));
+            if (selectedUser === deptName || (departments[deptName] && departments[deptName].includes(selectedUser))) {
+              setSelectedUser('All');
+            }
+            setIsDeleteDeptModalOpen(false);
+          } catch (error) {
+            console.error("Error deleting department", error);
+            alert("ไม่สามารถลบทีมได้");
+          }
+        }
+      };
+
+      // Delete Member
+      const openDeleteMemberModal = (deptName, memberName) => {
+        setDeptOfMemberToDelete(deptName);
+        setMemberToDelete(memberName);
+        setDeleteMemberText('');
+        setIsDeleteMemberModalOpen(true);
+      };
+
+      const confirmDeleteMember = async () => {
+        if (deleteMemberText !== 'Delete') return;
+        const deptName = deptOfMemberToDelete;
+        const memberName = memberToDelete;
+        
+        if (isFirebaseLoaded) {
+          const currentMembers = departments[deptName] || [];
+          const updatedMembers = currentMembers.filter(name => name !== memberName);
+          const { doc, updateDoc } = window.firebaseAPI;
+          try {
+            await updateDoc(doc(window.firebaseDB, "departments", deptName), { 
+              members: updatedMembers 
+            });
+            if (selectedUser === memberName) {
+              setSelectedUser('All');
+            }
+            setIsDeleteMemberModalOpen(false);
+          } catch (error) {
+            console.error("Error deleting member", error);
+            alert("ไม่สามารถลบพนักงานได้");
+          }
+        }
+      };
+
+      // --- Calendar Logic ---
+      const getDaysInMonth = (year, month) => new Date(year, month + 1, 0).getDate();
+      const getFirstDayOfMonth = (year, month) => {
+        const day = new Date(year, month, 1).getDay();
+        return (day + 6) % 7; // Shift so Monday is 0, Sunday is 6
+      };
+
+      const year = currentDate.getFullYear();
+      const month = currentDate.getMonth();
+      const daysInMonth = getDaysInMonth(year, month);
+      const firstDay = getFirstDayOfMonth(year, month);
+
+      const prevMonth = () => setCurrentDate(new Date(year, month - 1, 1));
+      const nextMonth = () => setCurrentDate(new Date(year, month + 1, 1));
+      const goToToday = () => setCurrentDate(new Date());
+
+      // --- Helper to get events for a specific day ---
+      const getEventsForDay = (dateStr) => {
+        const dayData = events.filter(ev => ev.date === dateStr);
+        const filteredEvents = dayData.filter(ev => {
+          if (selectedUser === 'Holidays') {
+            return ev.type === 'holiday' || ev.type === 'leave';
+          }
+          if (ev.type === 'holiday' || ev.type === 'leave') {
+            return selectedUser !== 'All' && ev.assignee === selectedUser;
+          }
+          return selectedUser === 'All' || ev.assignee === selectedUser;
+        });
+        
+        const normalEvents = filteredEvents.filter(ev => ev.type === 'event').sort((a, b) => a.time.localeCompare(b.time));
+        const holidays = filteredEvents.filter(ev => ev.type === 'holiday');
+        const leaves = filteredEvents.filter(ev => ev.type === 'leave');
+        return { normalEvents, holidays, leaves };
+      };
+
+      // --- Event Handling ---
+      const handleDayClick = (day) => {
+        const dateStr = `${year}-${String(month + 1).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
+        const { normalEvents, holidays, leaves } = getEventsForDay(dateStr);
+        
+        if (normalEvents.length > 0 || holidays.length > 0 || leaves.length > 0) {
+          setSelectedDayString(dateStr);
+          setIsDayViewOpen(true);
+        } else {
+          handleOpenModal(day);
+        }
+      };
+
+      const handleOpenModal = (day = null, eventToEdit = null, prefillAssignee = null, prefillType = 'event') => {
+        if (eventToEdit) {
+          setFormData({
+            type: eventToEdit.type || 'event',
+            date: eventToEdit.date,
+            hour: eventToEdit.time ? eventToEdit.time.split(':')[0] : '09',
+            minute: eventToEdit.time ? eventToEdit.time.split(':')[1] : '00',
+            activity: eventToEdit.activity || ACTIVITIES[0],
+            note: eventToEdit.note || '',
+            assignee: eventToEdit.assignee
+          });
+          setEditingEventId(eventToEdit.id);
+          setIsModalOpen(true);
+          return;
+        }
+
+        let dateStr = '';
+        if (day) {
+          dateStr = `${year}-${String(month + 1).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
+        } else if (selectedDayString) {
+          dateStr = selectedDayString;
+        } else {
+          const today = new Date();
+          dateStr = `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, '0')}-${String(today.getDate()).padStart(2, '0')}`;
+        }
+        
+        let initialType = prefillType;
+        if (selectedUser === 'Holidays' && prefillType === 'event') {
+          initialType = 'holiday';
+        }
+
+        const firstDept = Object.values(departments)[0];
+        const defaultAssignee = firstDept && firstDept.length > 0 ? firstDept[0] : '';
+
+        setFormData({
+          ...formData,
+          type: initialType,
+          date: dateStr,
+          assignee: prefillAssignee ? prefillAssignee : (selectedUser !== 'All' && selectedUser !== 'Holidays' ? selectedUser : defaultAssignee)
+        });
+        setEditingEventId(null);
+        setIsModalOpen(true);
+      };
+
+      const handleCloseModal = () => {
+        setIsModalOpen(false);
+        setEditingEventId(null);
+        setSelectedDayString('');
+        
+        const firstDept = Object.values(departments)[0];
+        const defaultAssignee = firstDept && firstDept.length > 0 ? firstDept[0] : '';
+        
+        setFormData({
+          type: 'event', date: '', hour: '09', minute: '00', activity: ACTIVITIES[0], note: '', assignee: defaultAssignee
+        });
+      };
+
+      const handleSaveEvent = async (e) => {
+        e.preventDefault();
+        if (!isFirebaseLoaded) return;
+
+        const eventData = {
+          ...formData,
+          time: (formData.type === 'holiday' || formData.type === 'leave') ? '' : `${formData.hour}:${formData.minute}`,
+          activity: formData.type === 'holiday' ? 'วันหยุด' : formData.type === 'leave' ? 'วันลางาน' : formData.activity
+        };
+        
+        const { collection, addDoc, updateDoc, doc } = window.firebaseAPI;
+
+        try {
+          if (editingEventId) {
+            await updateDoc(doc(window.firebaseDB, "events", editingEventId), eventData);
+          } else {
+            await addDoc(collection(window.firebaseDB, "events"), eventData);
+          }
+        } catch (error) {
+          console.error("Error writing to database", error);
+          alert("พบข้อผิดพลาดในการบันทึกข้อมูล กรุณาลองใหม่อีกครั้ง");
+        }
+        
+        handleCloseModal();
+      };
+
+      const handleDeleteEvent = async () => {
+        if (!isFirebaseLoaded || !editingEventId) return;
+        
+        const { doc, deleteDoc } = window.firebaseAPI;
+        try {
+          await deleteDoc(doc(window.firebaseDB, "events", editingEventId));
+        } catch (error) {
+          console.error("Error deleting from database", error);
+        }
+        
+        handleCloseModal();
+      };
+
+      const handleDeleteMonth = async () => {
+        if (deleteMonthText !== 'Delete') return;
+        if (!isFirebaseLoaded) return;
+        
+        const monthPrefix = `${year}-${String(month + 1).padStart(2, '0')}`;
+        const eventsToDelete = events.filter(ev => ev.date.startsWith(monthPrefix));
+        
+        const { doc, deleteDoc } = window.firebaseAPI;
+        try {
+          // Delete all matching events
+          await Promise.all(eventsToDelete.map(ev => deleteDoc(doc(window.firebaseDB, "events", ev.id))));
+        } catch (error) {
+          console.error("Error deleting month data", error);
+          alert("เกิดข้อผิดพลาดในการลบข้อมูลของเดือนนี้");
+        }
+        
+        setIsDeleteMonthModalOpen(false);
+        setDeleteMonthText('');
+      };
+
+      const getActivityIcon = (activity) => {
+        switch(activity) {
+          case 'เปิดบ้าน': return <Home className="w-3 h-3 mr-1" />;
+          case 'เซ็นสัญญายื่นสินกู้': return <FileSignature className="w-3 h-3 mr-1" />;
+          case 'เซ็นสัญญารับบ้าน': return <CheckSquare className="w-3 h-3 mr-1" />;
+          case 'ถ่ายคลิปหรือคอนเทนต์': return <Video className="w-3 h-3 mr-1" />;
+          default: return <ListTodo className="w-3 h-3 mr-1" />;
+        }
+      };
+
+      // --- Render ---
+      return (
+        <div className={`min-h-screen w-full overflow-x-hidden flex flex-col md:flex-row bg-gray-50 text-gray-900 transition-colors duration-200 ${isDarkMode ? 'dark:bg-gray-950 dark:text-gray-100' : ''}`}>
+          
+          {/* Mobile Header Overlay */}
+          <div className="md:hidden flex items-center justify-between p-4 bg-white dark:bg-gray-900 shadow-sm z-20 sticky top-0 border-b border-gray-200 dark:border-gray-800">
+            <div className="flex items-center space-x-3">
+              <button onClick={() => setIsSidebarOpen(!isSidebarOpen)} className="p-2 rounded-md bg-gray-100 dark:bg-gray-800 text-gray-600 dark:text-gray-300">
+                {isSidebarOpen ? <X size={20} /> : <Menu size={20} />}
+              </button>
+              <span className="font-semibold text-[#0b3d1b] dark:text-[#4ade80]">ตารางวางแผนการทำงาน</span>
+            </div>
+            <div className="flex items-center space-x-2">
+               <button onClick={() => setIsDarkMode(!isDarkMode)} className="p-2 rounded-full hover:bg-gray-100 dark:hover:bg-gray-800 text-gray-600 dark:text-gray-300">
+                {isDarkMode ? <Sun size={20} /> : <Moon size={20} />}
+              </button>
+              <button onClick={() => { setSelectedDayString(''); handleOpenModal(); }} className="p-2 rounded-full bg-[#0b3d1b] text-white hover:bg-[#0b3d1b]/90">
+                <Plus size={20} />
+              </button>
+            </div>
+          </div>
+
+          {/* Sidebar */}
+          <div className={`
+            fixed md:static inset-y-0 left-0 z-30 w-72 bg-white dark:bg-gray-900 border-r border-gray-200 dark:border-gray-800 shadow-lg md:shadow-none transform transition-transform duration-300 ease-in-out flex flex-col shrink-0
+            ${isSidebarOpen ? 'translate-x-0' : '-translate-x-full md:translate-x-0'}
+          `}>
+            {/* Logo Area */}
+            <div className="p-4 flex flex-col items-center justify-center border-b border-[#0b3d1b] h-32 bg-[#0b3d1b] shrink-0">
+               <img 
+                src="https://lh3.googleusercontent.com/d/1gKhLsrzU5lH26eRAbajDHCojJAbOkTPd" 
+                alt="Company Logo" 
+                className="max-h-full max-w-full object-contain drop-shadow-sm"
+                onError={(e) => {
+                  e.target.onerror = null; 
+                  e.target.style.display = 'none';
+                  e.target.nextSibling.style.display = 'flex';
+                }}
+              />
+              {/* Fallback if logo fails to load */}
+              <div className="hidden flex items-center space-x-2 text-white font-bold text-xl tracking-wide">
+                <CalendarIcon className="w-6 h-6" />
+                <span>MyCompany</span>
+              </div>
+            </div>
+
+            {/* Sidebar Menu */}
+            <div className="flex-1 overflow-y-auto py-4 px-3 space-y-6 scrollbar-thin scrollbar-thumb-gray-300 dark:scrollbar-thumb-gray-700">
+              
+              {/* All Calendars */}
+              <div>
+                <button 
+                  onClick={() => { setSelectedUser('All'); setIsSidebarOpen(false); }}
+                  className={`w-full flex items-center space-x-3 px-4 py-3 rounded-xl transition-colors ${selectedUser === 'All' ? 'bg-[#0b3d1b] text-white shadow-md shadow-[#0b3d1b]/30' : 'hover:bg-[#0b3d1b]/10 dark:hover:bg-gray-800 text-gray-700 dark:text-gray-200'}`}
+                >
+                  <CalendarIcon size={20} />
+                  <span className="font-medium">ปฏิทินวางแผนการทำงาน</span>
+                </button>
+              </div>
+
+              {/* Holiday Calendar */}
+              <div>
+                <button 
+                  onClick={() => { setSelectedUser('Holidays'); setIsSidebarOpen(false); }}
+                  className={`w-full flex items-center space-x-3 px-4 py-3 rounded-xl transition-colors ${selectedUser === 'Holidays' ? 'bg-[#0b3d1b] text-white shadow-md shadow-[#0b3d1b]/30' : 'hover:bg-[#0b3d1b]/10 dark:hover:bg-gray-800 text-gray-700 dark:text-gray-200'}`}
+                >
+                  <CalendarIcon size={20} />
+                  <span className="font-medium">ปฏิทินวันหยุด</span>
+                </button>
+              </div>
+
+              {/* Dynamic Departments mapping */}
+              {Object.entries(departments).map(([dept, members]) => (
+                <div key={dept}>
+                  <h3 className="px-4 text-xs font-bold text-[#0b3d1b] dark:text-[#4ade80] uppercase tracking-wider mb-2 flex items-center justify-between">
+                    <div className="flex items-center"><User size={14} className="mr-1" /> ทีม {dept}</div>
+                    <div className="flex space-x-1">
+                      <button onClick={() => openAddMemberModal(dept)} className="p-1 text-[#0b3d1b] hover:bg-[#0b3d1b]/10 dark:text-[#4ade80] dark:hover:bg-gray-700 rounded-md transition-colors" title={`เพิ่มพนักงานในทีม ${dept}`}>
+                        <Plus size={14} />
+                      </button>
+                      <button onClick={() => openDeleteDeptModal(dept)} className="p-1 text-red-500 hover:bg-red-100 dark:hover:bg-red-900/30 rounded-md transition-colors" title={`ลบทีม ${dept}`}>
+                        <Trash size={14} />
+                      </button>
+                    </div>
+                  </h3>
+                  <div className="space-y-1">
+                    {members.map(name => (
+                      <div key={name} className={`group flex items-center justify-between px-4 py-2 rounded-lg transition-colors ${selectedUser === name ? 'bg-[#0b3d1b]/10 text-[#0b3d1b] dark:bg-[#0b3d1b]/40 dark:text-[#4ade80] font-medium' : 'hover:bg-gray-100 dark:hover:bg-gray-800 text-gray-600 dark:text-gray-400'}`}>
+                        <button
+                          onClick={() => { setSelectedUser(name); setIsSidebarOpen(false); }}
+                          className="flex-1 flex items-center text-left"
+                        >
+                          <div className={`w-2 h-2 rounded-full mr-3 ${selectedUser === name ? 'bg-[#0b3d1b]' : 'bg-gray-300 dark:bg-gray-600'}`}></div>
+                          <span className="truncate">{name}</span>
+                        </button>
+                        <button 
+                          onClick={(e) => { e.stopPropagation(); openDeleteMemberModal(dept, name); }} 
+                          className="p-1 text-gray-400 hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-900/30 rounded transition-colors"
+                          title={`ลบพนักงาน ${name}`}
+                        >
+                          <X size={14} />
+                        </button>
+                      </div>
+                    ))}
+                    {members.length === 0 && (
+                      <div className="px-4 py-2 text-xs text-gray-400 italic">ไม่มีพนักงาน</div>
+                    )}
+                  </div>
+                </div>
+              ))}
+              
+              {/* Add New Department Button */}
+              <div className="pt-2 pb-6 border-t border-gray-100 dark:border-gray-800">
+                <button 
+                  onClick={openAddDeptModal} 
+                  className="w-full flex items-center justify-center space-x-2 px-4 py-2.5 text-sm font-medium text-[#0b3d1b] bg-[#0b3d1b]/5 hover:bg-[#0b3d1b]/10 dark:text-[#4ade80] dark:bg-[#0b3d1b]/20 dark:hover:bg-[#0b3d1b]/30 rounded-xl transition-colors border border-dashed border-[#0b3d1b]/30"
+                >
+                  <Plus size={16} />
+                  <span>เพิ่มทีมใหม่</span>
+                </button>
+              </div>
+
+            </div>
+          </div>
+
+          {/* Main Content Area */}
+          <div className="flex-1 flex flex-col h-screen overflow-hidden bg-gray-50 dark:bg-gray-950">
+            
+            {/* Top Header (Desktop) */}
+            <header className="hidden md:flex items-center justify-between p-6 bg-white dark:bg-gray-900 border-b border-gray-200 dark:border-gray-800 z-10">
+              <div className="flex items-center space-x-6">
+                <div className="flex flex-col">
+                  <h1 className="text-xl font-extrabold text-[#0b3d1b] dark:text-[#4ade80] mb-1">ตารางวางแผนการทำงาน</h1>
+                  <h2 className="text-2xl font-bold text-gray-800 dark:text-gray-100 flex items-center">
+                    <CalendarIcon className="mr-3 text-[#0b3d1b] dark:text-[#4ade80]" />
+                    {MONTHS_TH[month]} {year + 543} <span className="text-sm font-normal text-gray-500 dark:text-gray-400 ml-2">({year})</span>
+                  </h2>
+                </div>
+                <div className="flex items-center bg-gray-100 dark:bg-gray-800 rounded-lg p-1">
+                  <button onClick={prevMonth} className="p-1.5 rounded-md hover:bg-white dark:hover:bg-gray-700 text-gray-600 dark:text-gray-300 transition-colors">
+                    <ChevronLeft size={20} />
+                  </button>
+                  <button onClick={goToToday} className="px-3 py-1.5 text-sm font-medium hover:bg-white dark:hover:bg-gray-700 text-gray-700 dark:text-gray-200 transition-colors rounded-md">
+                    วันนี้
+                  </button>
+                  <button onClick={nextMonth} className="p-1.5 rounded-md hover:bg-white dark:hover:bg-gray-700 text-gray-600 dark:text-gray-300 transition-colors">
+                    <ChevronRight size={20} />
+                  </button>
+                </div>
+              </div>
+
+              <div className="flex items-center space-x-3 lg:space-x-4">
+                <button 
+                  onClick={() => setIsDarkMode(!isDarkMode)} 
+                  className="p-2.5 rounded-full hover:bg-gray-100 dark:hover:bg-gray-800 text-gray-600 dark:text-gray-300 transition-colors"
+                  title="สลับโหมดสว่าง/มืด"
+                >
+                  {isDarkMode ? <Sun size={20} /> : <Moon size={20} />}
+                </button>
+                <button 
+                  onClick={() => setIsDeleteMonthModalOpen(true)} 
+                  className="flex items-center space-x-2 bg-red-600 hover:bg-red-700 text-white px-4 py-2.5 rounded-xl font-medium transition-colors shadow-sm shadow-red-600/30"
+                  title="ลบข้อมูลเดือนนี้ทั้งหมด"
+                >
+                  <Trash size={18} />
+                  <span className="hidden xl:inline">ลบข้อมูลเดือนนี้</span>
+                </button>
+                <button 
+                  onClick={() => { setSelectedDayString(''); handleOpenModal(); }} 
+                  className="flex items-center space-x-2 bg-[#0b3d1b] hover:bg-[#0b3d1b]/90 text-white px-5 py-2.5 rounded-xl font-medium transition-colors shadow-sm shadow-[#0b3d1b]/30"
+                >
+                  <Plus size={18} />
+                  <span>เพิ่มกิจกรรม</span>
+                </button>
+              </div>
+            </header>
+
+            {/* Mobile Month Navigation */}
+            <div className="md:hidden flex items-center justify-between p-4 bg-white dark:bg-gray-900 border-b border-gray-200 dark:border-gray-800">
+              <button onClick={prevMonth} className="p-2 bg-gray-50 dark:bg-gray-800 rounded-lg"><ChevronLeft size={20} /></button>
+              <div className="text-lg font-bold text-center">
+                {MONTHS_TH[month]} {year + 543}
+              </div>
+              <button onClick={nextMonth} className="p-2 bg-gray-50 dark:bg-gray-800 rounded-lg"><ChevronRight size={20} /></button>
+            </div>
+
+            {/* Calendar Grid & Holiday Table View */}
+            <div className="flex-1 flex flex-col p-2 md:p-6 overflow-hidden">
+              {selectedUser === 'Holidays' ? (
+                <div className="flex-1 bg-white dark:bg-gray-900 rounded-2xl shadow-sm border border-gray-200 dark:border-gray-800 overflow-auto custom-scrollbar p-0">
+                  <table className="w-full text-center border-collapse min-w-max border border-gray-400 dark:border-gray-600">
+                    <thead>
+                      <tr>
+                        <th rowSpan={2} className="border border-gray-400 dark:border-gray-600 bg-[#0b3d1b]/20 dark:bg-[#0b3d1b]/40 p-2 text-sm font-semibold text-[#0b3d1b] dark:text-[#4ade80] w-12 shrink-0">ลำดับ</th>
+                        <th rowSpan={2} className="border border-gray-400 dark:border-gray-600 bg-[#0b3d1b]/20 dark:bg-[#0b3d1b]/40 p-2 text-sm font-semibold text-[#0b3d1b] dark:text-[#4ade80] w-32 shrink-0">ชื่อพนักงาน</th>
+                        {Array.from({ length: daysInMonth }).map((_, i) => {
+                          const d = new Date(year, month, i + 1);
+                          return (
+                            <th key={`dow-${i}`} className="border border-gray-400 dark:border-gray-600 bg-[#0b3d1b]/10 dark:bg-[#0b3d1b]/30 p-1 text-xs font-semibold text-[#0b3d1b] dark:text-[#4ade80] min-w-[35px]">
+                              {['อา.', 'จ.', 'อ.', 'พ.', 'พฤ.', 'ศ.', 'ส.'][d.getDay()]}
+                            </th>
+                          );
+                        })}
+                      </tr>
+                      <tr>
+                        {Array.from({ length: daysInMonth }).map((_, i) => {
+                          const day = i + 1;
+                          return (
+                            <th 
+                              key={`date-${i}`} 
+                              onClick={() => handleDayClick(day)}
+                              className="border border-gray-400 dark:border-gray-600 bg-[#0b3d1b]/10 dark:bg-[#0b3d1b]/30 p-1 text-[10px] sm:text-xs font-semibold text-[#0b3d1b] dark:text-[#4ade80] cursor-pointer hover:bg-[#0b3d1b]/20 transition-colors"
+                              title="ดูรายละเอียดของวันนี้"
+                            >
+                              {day}-{['ม.ค.', 'ก.พ.', 'มี.ค.', 'เม.ย.', 'พ.ค.', 'มิ.ย.', 'ก.ค.', 'ส.ค.', 'ก.ย.', 'ต.ค.', 'พ.ย.', 'ธ.ค.'][month]}
+                            </th>
+                          );
+                        })}
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {Object.entries(departments).map(([dept, members]) => (
+                        <React.Fragment key={dept}>
+                          <tr>
+                            <td colSpan={daysInMonth + 2} className="border border-gray-400 dark:border-gray-600 bg-[#0b3d1b]/5 dark:bg-[#0b3d1b]/20 p-2 text-sm font-bold text-left text-[#0b3d1b] dark:text-[#4ade80]">
+                              ทีม {dept}
+                            </td>
+                          </tr>
+                          {members.map((emp, idx) => (
+                            <tr key={emp} className="hover:bg-gray-50 dark:hover:bg-gray-800/50">
+                              <td className="border border-gray-400 dark:border-gray-600 p-1 text-xs font-medium text-gray-700 dark:text-gray-300">{idx + 1}</td>
+                              <td className="border border-gray-400 dark:border-gray-600 p-1 text-sm font-medium text-gray-800 dark:text-gray-200">{emp}</td>
+                              {Array.from({ length: daysInMonth }).map((_, i) => {
+                                const day = i + 1;
+                                const dateStr = `${year}-${String(month + 1).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
+                                const cellEvents = events.filter(ev => ev.assignee === emp && ev.date === dateStr && (ev.type === 'holiday' || ev.type === 'leave'));
+                                
+                                let cellClass = "bg-white dark:bg-gray-900 hover:bg-gray-100 dark:hover:bg-gray-800";
+                                let label = "";
+                                if (cellEvents.length > 0) {
+                                  if (cellEvents.some(ev => ev.type === 'holiday')) {
+                                    cellClass = "bg-red-500 hover:bg-red-600 text-white";
+                                    label = "หยุด";
+                                  } else if (cellEvents.some(ev => ev.type === 'leave')) {
+                                    cellClass = "bg-orange-500 hover:bg-orange-600 text-white";
+                                    label = "ลา";
+                                  }
+                                }
+
+                                return (
+                                  <td 
+                                    key={`cell-${emp}-${day}`} 
+                                    onClick={() => {
+                                      if (cellEvents.length > 0) {
+                                        setSelectedDayString(dateStr);
+                                        setIsDayViewOpen(true);
+                                      } else {
+                                        handleOpenModal(day, null, emp, 'holiday');
+                                      }
+                                    }}
+                                    className={`border border-gray-400 dark:border-gray-600 p-1 text-center cursor-pointer transition-colors ${cellClass}`}
+                                    title={cellEvents.length > 0 ? cellEvents[0].note : 'เพิ่มวันหยุด/ลางาน'}
+                                  >
+                                     <span className="text-[10px] font-bold block min-h-[16px]">{label}</span>
+                                  </td>
+                                );
+                              })}
+                            </tr>
+                          ))}
+                        </React.Fragment>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              ) : (
+              <div className="flex-1 bg-white dark:bg-gray-900 rounded-2xl shadow-sm border border-gray-200 dark:border-gray-800 overflow-hidden flex flex-col">
+                
+                {/* Days Header */}
+                <div className="grid grid-cols-7 border-b border-gray-200 dark:border-gray-800 bg-gray-50 dark:bg-gray-800/50">
+                  {DAYS_TH.map((day, idx) => (
+                    <div key={day} className={`py-3 text-center text-sm font-semibold text-gray-600 dark:text-gray-400 ${idx === 5 || idx === 6 ? 'text-red-500 dark:text-red-400' : ''}`}>
+                      {day}
+                    </div>
+                  ))}
+                </div>
+
+                {/* Calendar Body */}
+                <div className="flex-1 grid grid-cols-7 grid-rows-5 md:grid-rows-auto overflow-y-auto">
+                  {/* Empty cells for previous month */}
+                  {Array.from({ length: firstDay }).map((_, i) => (
+                    <div key={`empty-${i}`} className="bg-gray-50/50 dark:bg-gray-900/30 border-r border-b border-gray-100 dark:border-gray-800/50 p-1 md:p-2 min-h-[100px]" />
+                  ))}
+                  
+                  {/* Days of current month */}
+                  {Array.from({ length: daysInMonth }).map((_, i) => {
+                    const day = i + 1;
+                    const isToday = day === new Date().getDate() && month === new Date().getMonth() && year === new Date().getFullYear();
+                    
+                    const dateStr = `${year}-${String(month + 1).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
+                    const { normalEvents, holidays, leaves } = getEventsForDay(dateStr);
+                    const hasHoliday = holidays.length > 0;
+                    const hasLeave = leaves.length > 0;
+                    const hasEvent = normalEvents.length > 0;
+
+                    let bgClass = 'bg-white dark:bg-gray-900';
+                    if (hasHoliday) bgClass = 'bg-red-50 dark:bg-red-950/30 hover:bg-red-100 dark:hover:bg-red-900/40';
+                    else if (hasLeave) bgClass = 'bg-orange-50 dark:bg-orange-950/30 hover:bg-orange-100 dark:hover:bg-orange-900/40';
+                    else if (hasEvent) bgClass = 'bg-green-100 dark:bg-green-900/20 hover:bg-green-200 dark:hover:bg-green-900/40';
+                    else if (isToday) bgClass = 'bg-gray-50 dark:bg-gray-800 hover:bg-gray-100 dark:hover:bg-gray-700';
+                    else bgClass = 'bg-white dark:bg-gray-900 hover:bg-gray-50 dark:hover:bg-gray-800/50';
+
+                    return (
+                      <div 
+                        key={day} 
+                        onClick={() => handleDayClick(day)}
+                        className={`min-h-[100px] border-r border-b border-gray-100 dark:border-gray-800/50 p-1 md:p-2 flex flex-col transition-colors cursor-pointer group ${bgClass}`}
+                      >
+                        <div className="flex justify-between items-start mb-1">
+                          <span className={`inline-flex items-center justify-center w-6 h-6 md:w-8 md:h-8 rounded-full text-xs md:text-sm font-medium ${isToday ? 'bg-[#0b3d1b] text-white shadow-md shadow-[#0b3d1b]/30' : 'text-gray-700 dark:text-gray-300 group-hover:text-[#0b3d1b] dark:group-hover:text-[#4ade80]'}`}>
+                            {day}
+                          </span>
+                        </div>
+                        
+                        {/* Event / Holiday / Leave Indicators */}
+                        <div className="flex-1 flex flex-col space-y-1.5 px-1 md:px-2 mt-1">
+                          {hasHoliday && (
+                            <div className="text-[10px] md:text-xs bg-red-500 text-white rounded-md py-1 px-2 text-center font-medium shadow-sm truncate">
+                              วันหยุด
+                            </div>
+                          )}
+                          {hasLeave && (
+                            <div className="text-[10px] md:text-xs bg-orange-500 text-white rounded-md py-1 px-2 text-center font-medium shadow-sm truncate">
+                              วันลางาน
+                            </div>
+                          )}
+                          {hasEvent && (
+                            <div className="text-[10px] md:text-xs bg-green-200 text-[#0b3d1b] rounded-md py-1 px-2 text-center font-bold shadow-sm truncate">
+                              มีกิจกรรม
+                            </div>
+                          )}
+                        </div>
+                      </div>
+                    );
+                  })}
+
+                  {/* Empty cells for next month to fill grid */}
+                  {Array.from({ length: (7 - ((firstDay + daysInMonth) % 7)) % 7 }).map((_, i) => (
+                    <div key={`empty-end-${i}`} className="bg-gray-50/50 dark:bg-gray-900/30 border-r border-b border-gray-100 dark:border-gray-800/50 p-1 md:p-2 min-h-[100px]" />
+                  ))}
+                </div>
+              </div>
+              )}
+            </div>
+          </div>
+
+          {/* --- Delete Month Modal --- */}
+          {isDeleteMonthModalOpen && (
+            <div className="fixed inset-0 z-[70] flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm animate-fade-in overflow-hidden">
+              <div className="bg-white dark:bg-gray-900 rounded-2xl shadow-2xl w-full max-w-md overflow-hidden flex flex-col animate-slide-up border border-gray-100 dark:border-gray-800 max-h-full">
+                <div className="p-6">
+                  <h3 className="text-xl font-bold text-red-600 dark:text-red-400 mb-2 flex items-center">
+                    <Trash className="mr-2" /> ลบข้อมูลทั้งหมดในเดือนนี้?
+                  </h3>
+                  <p className="text-gray-600 dark:text-gray-400 text-sm mb-4 leading-relaxed">
+                    การกระทำนี้จะลบข้อมูลกิจกรรมและวันหยุดทั้งหมดของเดือน <strong>{MONTHS_TH[month]} {year + 543}</strong> ออกจากระบบ และไม่สามารถกู้คืนได้<br/><br/>
+                    พิมพ์คำว่า <span className="font-bold text-red-600 bg-red-50 dark:bg-red-900/30 px-2 py-0.5 rounded select-all">Delete</span> เพื่อยืนยัน
+                  </p>
+                  <input 
+                    type="text" 
+                    value={deleteMonthText}
+                    onChange={(e) => setDeleteMonthText(e.target.value)}
+                    placeholder="พิมพ์ Delete ที่นี่..."
+                    className="w-full px-4 py-2.5 bg-gray-50 dark:bg-gray-800 border border-gray-300 dark:border-gray-700 rounded-xl focus:ring-2 focus:ring-red-500 focus:border-red-500 outline-none transition-all dark:text-white mb-6"
+                  />
+                  <div className="flex justify-end space-x-3">
+                    <button 
+                      onClick={() => { setIsDeleteMonthModalOpen(false); setDeleteMonthText(''); }}
+                      className="px-5 py-2.5 rounded-xl text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800 font-medium transition-colors"
+                    >
+                      ยกเลิก
+                    </button>
+                    <button 
+                      onClick={handleDeleteMonth}
+                      disabled={deleteMonthText !== 'Delete'}
+                      className={`px-6 py-2.5 rounded-xl text-white font-medium transition-colors shadow-sm flex items-center ${deleteMonthText === 'Delete' ? 'bg-red-600 hover:bg-red-700 shadow-red-600/30' : 'bg-red-300 dark:bg-red-900/50 cursor-not-allowed'}`}
+                    >
+                      <Trash size={18} className="mr-2" />
+                      ยืนยันการลบ
+                    </button>
+                  </div>
+                </div>
+              </div>
+            </div>
+          )}
+
+          {/* --- Delete Event Confirm Modal --- */}
+          {isDeleteEventConfirmOpen && (
+            <div className="fixed inset-0 z-[70] flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm animate-fade-in overflow-hidden">
+              <div className="bg-white dark:bg-gray-900 rounded-2xl shadow-2xl w-full max-w-sm overflow-hidden flex flex-col animate-slide-up border border-gray-100 dark:border-gray-800 p-6 text-center">
+                <div className="w-16 h-16 bg-red-100 dark:bg-red-900/30 rounded-full flex items-center justify-center mx-auto mb-4">
+                  <Trash className="w-8 h-8 text-red-600 dark:text-red-400" />
+                </div>
+                <h3 className="text-xl font-bold text-gray-800 dark:text-gray-100 mb-2">ยืนยันการลบข้อมูล</h3>
+                <p className="text-gray-600 dark:text-gray-400 text-sm mb-6 leading-relaxed">
+                  คุณต้องการลบข้อมูลนี้จริงใช่ไหม?<br/>
+                  การกระทำนี้ไม่สามารถกู้คืนได้
+                </p>
+                <div className="flex justify-center space-x-3">
+                  <button 
+                    onClick={() => setIsDeleteEventConfirmOpen(false)}
+                    className="px-5 py-2.5 rounded-xl text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800 font-medium transition-colors flex-1"
+                  >
+                    ยกเลิก
+                  </button>
+                  <button 
+                    onClick={() => {
+                      setIsDeleteEventConfirmOpen(false);
+                      handleDeleteEvent();
+                    }}
+                    className="px-5 py-2.5 rounded-xl bg-red-600 hover:bg-red-700 text-white font-medium transition-colors shadow-sm shadow-red-600/30 flex-1"
+                  >
+                    ลบข้อมูล
+                  </button>
+                </div>
+              </div>
+            </div>
+          )}
+
+          {/* --- Add Department Modal --- */}
+          {isAddDeptModalOpen && (
+            <div className="fixed inset-0 z-[70] flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm animate-fade-in overflow-hidden">
+              <div className="bg-white dark:bg-gray-900 rounded-2xl shadow-2xl w-full max-w-sm overflow-hidden flex flex-col animate-slide-up border border-gray-100 dark:border-gray-800 p-6">
+                <h3 className="text-xl font-bold text-gray-800 dark:text-gray-100 mb-4 flex items-center">
+                  <Plus className="mr-2 text-[#0b3d1b] dark:text-[#4ade80]" /> เพิ่มทีมใหม่
+                </h3>
+                <input 
+                  type="text" 
+                  value={newDeptName}
+                  onChange={(e) => setNewDeptName(e.target.value)}
+                  placeholder="กรอกชื่อทีม..."
+                  className="w-full px-4 py-2.5 bg-gray-50 dark:bg-gray-800 border border-gray-300 dark:border-gray-700 rounded-xl focus:ring-2 focus:ring-[#0b3d1b] focus:border-[#0b3d1b] dark:focus:ring-[#4ade80] dark:focus:border-[#4ade80] outline-none transition-all dark:text-white mb-6"
+                />
+                <div className="flex justify-end space-x-3">
+                  <button 
+                    onClick={() => setIsAddDeptModalOpen(false)}
+                    className="px-5 py-2.5 rounded-xl text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800 font-medium transition-colors"
+                  >
+                    ยกเลิก
+                  </button>
+                  <button 
+                    onClick={confirmAddDepartment}
+                    disabled={!newDeptName.trim()}
+                    className={`px-6 py-2.5 rounded-xl text-white font-medium transition-colors shadow-sm flex items-center ${newDeptName.trim() ? 'bg-[#0b3d1b] hover:bg-[#0b3d1b]/90 shadow-[#0b3d1b]/30' : 'bg-gray-300 dark:bg-gray-700 cursor-not-allowed'}`}
+                  >
+                    บันทึก
+                  </button>
+                </div>
+              </div>
+            </div>
+          )}
+
+          {/* --- Add Member Modal --- */}
+          {isAddMemberModalOpen && (
+            <div className="fixed inset-0 z-[70] flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm animate-fade-in overflow-hidden">
+              <div className="bg-white dark:bg-gray-900 rounded-2xl shadow-2xl w-full max-w-sm overflow-hidden flex flex-col animate-slide-up border border-gray-100 dark:border-gray-800 p-6">
+                <h3 className="text-xl font-bold text-gray-800 dark:text-gray-100 mb-4 flex items-center">
+                  <User className="mr-2 text-[#0b3d1b] dark:text-[#4ade80]" /> เพิ่มพนักงานในทีม {targetDeptForMember}
+                </h3>
+                <input 
+                  type="text" 
+                  value={newMemberName}
+                  onChange={(e) => setNewMemberName(e.target.value)}
+                  placeholder="กรอกชื่อพนักงาน..."
+                  className="w-full px-4 py-2.5 bg-gray-50 dark:bg-gray-800 border border-gray-300 dark:border-gray-700 rounded-xl focus:ring-2 focus:ring-[#0b3d1b] focus:border-[#0b3d1b] dark:focus:ring-[#4ade80] dark:focus:border-[#4ade80] outline-none transition-all dark:text-white mb-6"
+                />
+                <div className="flex justify-end space-x-3">
+                  <button 
+                    onClick={() => setIsAddMemberModalOpen(false)}
+                    className="px-5 py-2.5 rounded-xl text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800 font-medium transition-colors"
+                  >
+                    ยกเลิก
+                  </button>
+                  <button 
+                    onClick={confirmAddMember}
+                    disabled={!newMemberName.trim()}
+                    className={`px-6 py-2.5 rounded-xl text-white font-medium transition-colors shadow-sm flex items-center ${newMemberName.trim() ? 'bg-[#0b3d1b] hover:bg-[#0b3d1b]/90 shadow-[#0b3d1b]/30' : 'bg-gray-300 dark:bg-gray-700 cursor-not-allowed'}`}
+                  >
+                    บันทึก
+                  </button>
+                </div>
+              </div>
+            </div>
+          )}
+
+          {/* --- Delete Department Modal --- */}
+          {isDeleteDeptModalOpen && (
+            <div className="fixed inset-0 z-[70] flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm animate-fade-in overflow-hidden">
+              <div className="bg-white dark:bg-gray-900 rounded-2xl shadow-2xl w-full max-w-md overflow-hidden flex flex-col animate-slide-up border border-gray-100 dark:border-gray-800 max-h-full">
+                <div className="p-6">
+                  <h3 className="text-xl font-bold text-red-600 dark:text-red-400 mb-2 flex items-center">
+                    <Trash className="mr-2" /> ลบทีม {deptToDelete}?
+                  </h3>
+                  <p className="text-gray-600 dark:text-gray-400 text-sm mb-4 leading-relaxed">
+                    การกระทำนี้จะลบทีม <strong>{deptToDelete}</strong> และรายชื่อพนักงานทั้งหมดในทีมนี้ออกจากระบบ ไม่สามารถกู้คืนได้<br/><br/>
+                    พิมพ์คำว่า <span className="font-bold text-red-600 bg-red-50 dark:bg-red-900/30 px-2 py-0.5 rounded select-all">Delete</span> เพื่อยืนยัน
+                  </p>
+                  <input 
+                    type="text" 
+                    value={deleteDeptText}
+                    onChange={(e) => setDeleteDeptText(e.target.value)}
+                    placeholder="พิมพ์ Delete ที่นี่..."
+                    className="w-full px-4 py-2.5 bg-gray-50 dark:bg-gray-800 border border-gray-300 dark:border-gray-700 rounded-xl focus:ring-2 focus:ring-red-500 focus:border-red-500 outline-none transition-all dark:text-white mb-6"
+                  />
+                  <div className="flex justify-end space-x-3">
+                    <button 
+                      onClick={() => { setIsDeleteDeptModalOpen(false); setDeleteDeptText(''); }}
+                      className="px-5 py-2.5 rounded-xl text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800 font-medium transition-colors"
+                    >
+                      ยกเลิก
+                    </button>
+                    <button 
+                      onClick={confirmDeleteDepartment}
+                      disabled={deleteDeptText !== 'Delete'}
+                      className={`px-6 py-2.5 rounded-xl text-white font-medium transition-colors shadow-sm flex items-center ${deleteDeptText === 'Delete' ? 'bg-red-600 hover:bg-red-700 shadow-red-600/30' : 'bg-red-300 dark:bg-red-900/50 cursor-not-allowed'}`}
+                    >
+                      <Trash size={18} className="mr-2" />
+                      ยืนยันการลบ
+                    </button>
+                  </div>
+                </div>
+              </div>
+            </div>
+          )}
+
+          {/* --- Delete Member Modal --- */}
+          {isDeleteMemberModalOpen && (
+            <div className="fixed inset-0 z-[70] flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm animate-fade-in overflow-hidden">
+              <div className="bg-white dark:bg-gray-900 rounded-2xl shadow-2xl w-full max-w-md overflow-hidden flex flex-col animate-slide-up border border-gray-100 dark:border-gray-800 max-h-full">
+                <div className="p-6">
+                  <h3 className="text-xl font-bold text-red-600 dark:text-red-400 mb-2 flex items-center">
+                    <Trash className="mr-2" /> ลบพนักงาน {memberToDelete}?
+                  </h3>
+                  <p className="text-gray-600 dark:text-gray-400 text-sm mb-4 leading-relaxed">
+                    การกระทำนี้จะลบรายชื่อพนักงาน <strong>{memberToDelete}</strong> ออกจากทีม {deptOfMemberToDelete} ทันที ไม่สามารถกู้คืนได้<br/><br/>
+                    พิมพ์คำว่า <span className="font-bold text-red-600 bg-red-50 dark:bg-red-900/30 px-2 py-0.5 rounded select-all">Delete</span> เพื่อยืนยัน
+                  </p>
+                  <input 
+                    type="text" 
+                    value={deleteMemberText}
+                    onChange={(e) => setDeleteMemberText(e.target.value)}
+                    placeholder="พิมพ์ Delete ที่นี่..."
+                    className="w-full px-4 py-2.5 bg-gray-50 dark:bg-gray-800 border border-gray-300 dark:border-gray-700 rounded-xl focus:ring-2 focus:ring-red-500 focus:border-red-500 outline-none transition-all dark:text-white mb-6"
+                  />
+                  <div className="flex justify-end space-x-3">
+                    <button 
+                      onClick={() => { setIsDeleteMemberModalOpen(false); setDeleteMemberText(''); }}
+                      className="px-5 py-2.5 rounded-xl text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800 font-medium transition-colors"
+                    >
+                      ยกเลิก
+                    </button>
+                    <button 
+                      onClick={confirmDeleteMember}
+                      disabled={deleteMemberText !== 'Delete'}
+                      className={`px-6 py-2.5 rounded-xl text-white font-medium transition-colors shadow-sm flex items-center ${deleteMemberText === 'Delete' ? 'bg-red-600 hover:bg-red-700 shadow-red-600/30' : 'bg-red-300 dark:bg-red-900/50 cursor-not-allowed'}`}
+                    >
+                      <Trash size={18} className="mr-2" />
+                      ยืนยันการลบ
+                    </button>
+                  </div>
+                </div>
+              </div>
+            </div>
+          )}
+
+          {/* --- Day View Modal --- */}
+          {isDayViewOpen && selectedDayString && (() => {
+            const { normalEvents, holidays, leaves } = getEventsForDay(selectedDayString);
+            const allDayItems = [...holidays, ...leaves, ...normalEvents];
+            
+            // Count times to identify duplicates
+            const timeCounts = {};
+            normalEvents.forEach(ev => {
+              timeCounts[ev.time] = (timeCounts[ev.time] || 0) + 1;
+            });
+
+            // Format date for display
+            const displayDate = new Date(selectedDayString);
+            const formattedDate = `${displayDate.getDate()} ${MONTHS_TH[displayDate.getMonth()]} ${displayDate.getFullYear() + 543}`;
+
+            return (
+              <div className="fixed inset-0 z-[60] flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm animate-fade-in">
+                <div className="bg-white dark:bg-gray-900 rounded-2xl shadow-2xl w-full max-w-3xl overflow-hidden flex flex-col animate-slide-up border border-gray-100 dark:border-gray-800 max-h-[90vh]">
+                  
+                  <div className="flex items-center justify-between p-5 border-b border-[#0b3d1b]/20 dark:border-[#0b3d1b]/50 bg-[#0b3d1b]/10 dark:bg-[#0b3d1b]/20">
+                    <h3 className="text-xl font-bold text-[#0b3d1b] dark:text-[#4ade80] flex items-center">
+                      <CalendarIcon className="mr-2" />
+                      กิจกรรมประจำวันที่ {formattedDate}
+                    </h3>
+                    <button onClick={() => setIsDayViewOpen(false)} className="p-2 rounded-full hover:bg-[#0b3d1b]/20 dark:hover:bg-[#0b3d1b]/40 text-[#0b3d1b] dark:text-[#4ade80] transition-colors">
+                      <X size={20} />
+                    </button>
+                  </div>
+
+                  <div className="p-6 overflow-y-auto custom-scrollbar">
+                    {allDayItems.length > 0 ? (
+                      <div className="overflow-x-auto rounded-xl border border-gray-200 dark:border-gray-700">
+                        <table className="w-full text-left border-collapse min-w-[600px]">
+                          <thead>
+                            <tr className="bg-gray-50 dark:bg-gray-800 border-b border-gray-200 dark:border-gray-700">
+                              <th className="p-3 text-sm font-semibold text-gray-700 dark:text-gray-300">เวลา</th>
+                              <th className="p-3 text-sm font-semibold text-gray-700 dark:text-gray-300">ผู้รับผิดชอบ</th>
+                              <th className="p-3 text-sm font-semibold text-gray-700 dark:text-gray-300">สิ่งที่ต้องทำ</th>
+                              <th className="p-3 text-sm font-semibold text-gray-700 dark:text-gray-300">หมายเหตุ</th>
+                            </tr>
+                          </thead>
+                          <tbody>
+                            {allDayItems.map((ev, idx) => {
+                              const isDuplicateTime = ev.type === 'event' && timeCounts[ev.time] > 1;
+                              
+                              // Set row background colors
+                              let rowBgClass = '';
+                              if (ev.type === 'holiday') {
+                                rowBgClass = 'bg-red-50/50 dark:bg-red-900/10 hover:bg-gray-50 dark:hover:bg-gray-800';
+                              } else if (ev.type === 'leave') {
+                                rowBgClass = 'bg-orange-50/50 dark:bg-orange-900/10 hover:bg-gray-50 dark:hover:bg-gray-800';
+                              } else {
+                                rowBgClass = 'bg-white dark:bg-gray-900 hover:bg-gray-50 dark:hover:bg-gray-800';
+                              }
+
+                              // Override text colors if the whole row is highlighted red
+                              const textColor = 'text-gray-800 dark:text-gray-200';
+                              const subTextColor = 'text-gray-600 dark:text-gray-400';
+                              
+                              return (
+                                <tr 
+                                  key={ev.id} 
+                                  onClick={() => { setIsDayViewOpen(false); handleOpenModal(null, ev); }}
+                                  className={`border-b border-gray-100 dark:border-gray-800 cursor-pointer transition-colors ${rowBgClass} ${idx === allDayItems.length - 1 ? 'border-none' : ''}`}
+                                >
+                                  <td className={`p-3 text-sm whitespace-nowrap font-medium ${textColor}`}>
+                                    {(ev.type === 'holiday' || ev.type === 'leave') ? '-' : (
+                                      <span className={isDuplicateTime ? 'border border-red-500 bg-red-50 text-red-600 dark:bg-red-900/30 dark:text-red-400 px-2 py-1 rounded-md' : ''}>
+                                        {ev.time} น.
+                                      </span>
+                                    )}
+                                  </td>
+                                  <td className={`p-3 text-sm whitespace-nowrap font-medium ${textColor}`}>
+                                    {ev.assignee}
+                                  </td>
+                                  <td className={`p-3 text-sm ${textColor}`}>
+                                    <div className="flex items-center">
+                                      {ev.type === 'holiday' ? <span className="text-red-500 font-semibold">วันหยุดพักผ่อน</span> 
+                                       : ev.type === 'leave' ? <span className="text-orange-500 font-semibold">วันลางาน</span> 
+                                       : <>{getActivityIcon(ev.activity)} {ev.activity}</>}
+                                    </div>
+                                  </td>
+                                  <td className={`p-3 text-sm break-words max-w-[200px] ${subTextColor}`}>
+                                    {ev.note || '-'}
+                                  </td>
+                                </tr>
+                              );
+                            })}
+                          </tbody>
+                        </table>
+                      </div>
+                    ) : (
+                      <div className="text-center py-10 text-gray-500 dark:text-gray-400">
+                        ไม่มีกิจกรรมในวันนี้
+                      </div>
+                    )}
+                  </div>
+
+                  <div className="p-5 border-t border-gray-200 dark:border-gray-800 flex justify-end space-x-3 bg-gray-50 dark:bg-gray-800/50">
+                    <button 
+                      onClick={() => setIsDayViewOpen(false)}
+                      className="px-5 py-2.5 rounded-xl text-gray-700 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-700 font-medium transition-colors"
+                    >
+                      ปิด
+                    </button>
+                    <button 
+                      onClick={() => { setIsDayViewOpen(false); handleOpenModal(); }}
+                      className="px-6 py-2.5 rounded-xl bg-[#0b3d1b] hover:bg-[#0b3d1b]/90 text-white font-medium transition-colors shadow-sm shadow-[#0b3d1b]/30 flex items-center"
+                    >
+                      <Plus size={18} className="mr-2" />
+                      เพิ่มข้อมูล
+                    </button>
+                  </div>
+                </div>
+              </div>
+            );
+          })()}
+
+          {/* --- Add Event Modal --- */}
+          {isModalOpen && (
+            <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm animate-fade-in overflow-hidden">
+              <div className="bg-white dark:bg-gray-900 rounded-2xl shadow-2xl w-full max-w-lg overflow-hidden flex flex-col animate-slide-up border border-gray-100 dark:border-gray-800 max-h-full">
+                
+                <div className="flex items-center justify-between p-5 border-b border-gray-200 dark:border-gray-800 bg-gray-50 dark:bg-gray-800/50 shrink-0">
+                  <h3 className="text-xl font-bold text-gray-800 dark:text-gray-100 flex items-center">
+                    <CalendarIcon className="mr-2 text-[#0b3d1b] dark:text-[#4ade80]" />
+                    {editingEventId ? 'แก้ไขรายละเอียด' : 'เพิ่มรายละเอียด'}
+                  </h3>
+                  <button onClick={handleCloseModal} className="p-2 rounded-full hover:bg-gray-200 dark:hover:bg-gray-700 text-gray-500 dark:text-gray-400 transition-colors">
+                    <X size={20} />
+                  </button>
+                </div>
+
+                <form onSubmit={handleSaveEvent} className="p-5 md:p-6 space-y-5 overflow-y-auto overflow-x-hidden max-h-[80vh]">
+                  
+                  {/* Type Selection */}
+                  <div className="flex flex-wrap gap-4 pb-2 border-b border-gray-100 dark:border-gray-800">
+                    {selectedUser !== 'Holidays' && (
+                      <label className="flex items-center space-x-2 cursor-pointer">
+                        <input 
+                          type="radio" 
+                          name="eventType"
+                          checked={formData.type === 'event'} 
+                          onChange={() => setFormData({...formData, type: 'event'})} 
+                          className="w-4 h-4 text-[#0b3d1b] bg-gray-100 border-gray-300 focus:ring-[#0b3d1b] dark:focus:ring-[#4ade80] dark:ring-offset-gray-800 focus:ring-2 dark:bg-gray-700 dark:border-gray-600" 
+                        />
+                        <span className="text-sm font-medium text-gray-900 dark:text-gray-300">กิจกรรม</span>
+                      </label>
+                    )}
+                    <label className="flex items-center space-x-2 cursor-pointer">
+                      <input 
+                        type="radio" 
+                        name="eventType"
+                        checked={formData.type === 'holiday'} 
+                        onChange={() => setFormData({...formData, type: 'holiday'})} 
+                        className="w-4 h-4 text-red-600 bg-gray-100 border-gray-300 focus:ring-red-500 dark:focus:ring-red-600 dark:ring-offset-gray-800 focus:ring-2 dark:bg-gray-700 dark:border-gray-600" 
+                      />
+                      <span className="text-sm font-medium text-gray-900 dark:text-gray-300">วันหยุด (Holiday)</span>
+                    </label>
+                    <label className="flex items-center space-x-2 cursor-pointer">
+                      <input 
+                        type="radio" 
+                        name="eventType"
+                        checked={formData.type === 'leave'} 
+                        onChange={() => setFormData({...formData, type: 'leave'})} 
+                        className="w-4 h-4 text-orange-600 bg-gray-100 border-gray-300 focus:ring-orange-500 dark:focus:ring-orange-600 dark:ring-offset-gray-800 focus:ring-2 dark:bg-gray-700 dark:border-gray-600" 
+                      />
+                      <span className="text-sm font-medium text-gray-900 dark:text-gray-300">วันลางาน (Leave)</span>
+                    </label>
+                  </div>
+
+                  {/* Date & Assignee Row */}
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1.5">วันที่</label>
+                      <input 
+                        type="date" 
+                        required
+                        value={formData.date}
+                        onChange={(e) => setFormData({...formData, date: e.target.value})}
+                        className="w-full px-4 py-2.5 bg-gray-50 dark:bg-gray-800 border border-gray-300 dark:border-gray-700 rounded-xl focus:ring-2 focus:ring-[#0b3d1b] focus:border-[#0b3d1b] dark:focus:ring-[#4ade80] dark:focus:border-[#4ade80] outline-none transition-all dark:text-white"
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1.5">ผู้รับผิดชอบ</label>
+                      <select 
+                        value={formData.assignee}
+                        onChange={(e) => setFormData({...formData, assignee: e.target.value})}
+                        className="w-full px-4 py-2.5 bg-gray-50 dark:bg-gray-800 border border-gray-300 dark:border-gray-700 rounded-xl focus:ring-2 focus:ring-[#0b3d1b] focus:border-[#0b3d1b] dark:focus:ring-[#4ade80] dark:focus:border-[#4ade80] outline-none transition-all dark:text-white"
+                      >
+                        {Object.entries(departments).map(([dept, members]) => (
+                          <optgroup key={dept} label={dept}>
+                            {members.map(name => <option key={name} value={name}>{name}</option>)}
+                          </optgroup>
+                        ))}
+                      </select>
+                    </div>
+                  </div>
+
+                  {/* Conditional Fields based on Type */}
+                  {formData.type === 'event' && (
+                    <>
+                      {/* Time Dropdowns */}
+                      <div>
+                        <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1.5">เวลา (ชั่วโมง : นาที)</label>
+                        <div className="flex items-center space-x-3">
+                          <select 
+                            value={formData.hour}
+                            onChange={(e) => setFormData({...formData, hour: e.target.value})}
+                            className="flex-1 px-4 py-2.5 bg-gray-50 dark:bg-gray-800 border border-gray-300 dark:border-gray-700 rounded-xl focus:ring-2 focus:ring-[#0b3d1b] focus:border-[#0b3d1b] dark:focus:ring-[#4ade80] dark:focus:border-[#4ade80] outline-none transition-all dark:text-white"
+                          >
+                            {HOURS.map(h => <option key={`h-${h}`} value={h}>{h}</option>)}
+                          </select>
+                          <span className="text-xl font-bold text-gray-400">:</span>
+                          <select 
+                            value={formData.minute}
+                            onChange={(e) => setFormData({...formData, minute: e.target.value})}
+                            className="flex-1 px-4 py-2.5 bg-gray-50 dark:bg-gray-800 border border-gray-300 dark:border-gray-700 rounded-xl focus:ring-2 focus:ring-[#0b3d1b] focus:border-[#0b3d1b] dark:focus:ring-[#4ade80] dark:focus:border-[#4ade80] outline-none transition-all dark:text-white"
+                          >
+                            {MINUTES.map(m => <option key={`m-${m}`} value={m}>{m}</option>)}
+                          </select>
+                        </div>
+                      </div>
+
+                      {/* Activity Dropdown */}
+                      <div>
+                        <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1.5">สิ่งที่ต้องทำ</label>
+                        <div className="relative">
+                          <select 
+                            value={formData.activity}
+                            onChange={(e) => setFormData({...formData, activity: e.target.value})}
+                            className="w-full px-4 py-2.5 bg-gray-50 dark:bg-gray-800 border border-gray-300 dark:border-gray-700 rounded-xl focus:ring-2 focus:ring-[#0b3d1b] focus:border-[#0b3d1b] dark:focus:ring-[#4ade80] dark:focus:border-[#4ade80] outline-none transition-all appearance-none dark:text-white pr-10"
+                          >
+                            {ACTIVITIES.map(act => (
+                              <option key={act} value={act}>{act}</option>
+                            ))}
+                          </select>
+                          <div className="pointer-events-none absolute inset-y-0 right-0 flex items-center px-4 text-gray-500">
+                            <ListTodo size={18} />
+                          </div>
+                        </div>
+                      </div>
+                    </>
+                  )}
+
+                  {/* Note / Details */}
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1.5">
+                      หมายเหตุ / รายละเอียดเพิ่มเติม
+                    </label>
+                    <textarea 
+                      rows="3"
+                      value={formData.note}
+                      onChange={(e) => setFormData({...formData, note: e.target.value})}
+                      placeholder={formData.type === 'holiday' || formData.type === 'leave' ? "สาเหตุการลา/หยุดพัก เช่น ป่วย ติดธุระ..." : "กรุณาระบุรายละเอียด เช่น สถานที่ ลูกค้า หรือสิ่งที่ต้องเตรียม..."}
+                      className="w-full px-4 py-3 bg-gray-50 dark:bg-gray-800 border border-gray-300 dark:border-gray-700 rounded-xl focus:ring-2 focus:ring-[#0b3d1b] focus:border-[#0b3d1b] dark:focus:ring-[#4ade80] dark:focus:border-[#4ade80] outline-none transition-all resize-none dark:text-white"
+                    ></textarea>
+                  </div>
+
+                  <div className="pt-4 flex justify-between space-x-3 border-t border-gray-200 dark:border-gray-800">
+                    <div>
+                      {editingEventId && (
+                        <button 
+                          type="button" 
+                          onClick={() => setIsDeleteEventConfirmOpen(true)}
+                          className="px-5 py-2.5 rounded-xl text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/30 font-medium transition-colors"
+                        >
+                          ลบข้อมูล
+                        </button>
+                      )}
+                    </div>
+                    <div className="flex space-x-3">
+                      <button 
+                        type="button" 
+                        onClick={handleCloseModal}
+                        className="px-5 py-2.5 rounded-xl text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800 font-medium transition-colors"
+                      >
+                        ยกเลิก
+                      </button>
+                      <button 
+                        type="submit"
+                        className={`px-6 py-2.5 rounded-xl text-white font-medium transition-colors shadow-sm flex items-center ${formData.type === 'holiday' ? 'bg-red-600 hover:bg-red-700 shadow-red-600/30' : formData.type === 'leave' ? 'bg-orange-600 hover:bg-orange-700 shadow-orange-600/30' : 'bg-[#0b3d1b] hover:bg-[#0b3d1b]/90 shadow-[#0b3d1b]/30'}`}
+                      >
+                        <Plus size={18} className="mr-2" />
+                        บันทึกข้อมูล
+                      </button>
+                    </div>
+                  </div>
+                </form>
+              </div>
+            </div>
+          )}
+
+          {/* Global Styles for Custom Scrollbar & Animations */}
+          <style dangerouslySetInnerHTML={{__html: `
+            .custom-scrollbar::-webkit-scrollbar { width: 4px; height: 8px; }
+            .custom-scrollbar::-webkit-scrollbar-track { background: transparent; }
+            .custom-scrollbar::-webkit-scrollbar-thumb { background-color: rgba(156, 163, 175, 0.5); border-radius: 20px; }
+            .dark .custom-scrollbar::-webkit-scrollbar-thumb { background-color: rgba(75, 85, 99, 0.5); }
+            
+            @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+            @keyframes slideUp { from { opacity: 0; transform: translateY(20px); } to { opacity: 1; transform: translateY(0); } }
+            .animate-fade-in { animation: fadeIn 0.2s ease-out forwards; }
+            .animate-slide-up { animation: slideUp 0.3s cubic-bezier(0.16, 1, 0.3, 1) forwards; }
+          `}} />
+        </div>
+      );
+    }
+
+    const root = ReactDOM.createRoot(document.getElementById('root'));
+    root.render(<App />);
+  </script>
+</body>
+</html>
