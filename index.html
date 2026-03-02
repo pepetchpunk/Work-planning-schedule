@@ -32,14 +32,15 @@
     import { getAnalytics } from "https://www.gstatic.com/firebasejs/12.10.0/firebase-analytics.js";
     import { getFirestore, collection, onSnapshot, addDoc, updateDoc, deleteDoc, doc, setDoc } from "https://www.gstatic.com/firebasejs/12.10.0/firebase-firestore.js";
 
+    // Your web app's Firebase configuration
     const firebaseConfig = {
-      apiKey: "AIzaSyBzjvRSnUcaRRNG_nxoo2b_FRS81MhU_Bo",
-      authDomain: "startup-up.firebaseapp.com",
-      projectId: "startup-up",
-      storageBucket: "startup-up.firebasestorage.app",
-      messagingSenderId: "818763745889",
-      appId: "1:818763745889:web:76db32bd12f11a7b517820",
-      measurementId: "G-KJ7S2RP9KF"
+      apiKey: "AIzaSyA1ND18a-P7X936z0Dpc6RRY2_oXYU5_Ao",
+      authDomain: "startupuprealestate-e4b0a.firebaseapp.com",
+      projectId: "startupuprealestate-e4b0a",
+      storageBucket: "startupuprealestate-e4b0a.firebasestorage.app",
+      messagingSenderId: "966000130004",
+      appId: "1:966000130004:web:5318ddaf6d2225b0cc8841",
+      measurementId: "G-BP4JD5VBLZ"
     };
 
     // Initialize Firebase
@@ -106,6 +107,7 @@
       'เปิดบ้าน', 
       'เซ็นสัญญายื่นสินกู้', 
       'เซ็นสัญญารับบ้าน', 
+      'โอนบ้าน',
       'ถ่ายคลิปหรือคอนเทนต์', 
       'อื่นๆ'
     ];
@@ -532,6 +534,7 @@
           case 'เปิดบ้าน': return <Home className="w-3 h-3 mr-1" />;
           case 'เซ็นสัญญายื่นสินกู้': return <FileSignature className="w-3 h-3 mr-1" />;
           case 'เซ็นสัญญารับบ้าน': return <CheckSquare className="w-3 h-3 mr-1" />;
+          case 'โอนบ้าน': return <Home className="w-3 h-3 mr-1" />;
           case 'ถ่ายคลิปหรือคอนเทนต์': return <Video className="w-3 h-3 mr-1" />;
           default: return <ListTodo className="w-3 h-3 mr-1" />;
         }
