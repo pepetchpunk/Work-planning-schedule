@@ -110,6 +110,7 @@
       'เซ็นสัญญายื่นสินกู้', 
       'เซ็นสัญญารับบ้าน', 
       'โอนบ้าน',
+      'ตรวจบ้าน',
       'ถ่ายคลิปหรือคอนเทนต์', 
       'อื่นๆ'
     ];
@@ -595,6 +596,7 @@
           case 'เซ็นสัญญายื่นสินกู้': return <FileSignature className="w-3 h-3 mr-1" />;
           case 'เซ็นสัญญารับบ้าน': return <CheckSquare className="w-3 h-3 mr-1" />;
           case 'โอนบ้าน': return <Home className="w-3 h-3 mr-1" />;
+          case 'ตรวจบ้าน': return <CheckSquare className="w-3 h-3 mr-1" />;
           case 'ถ่ายคลิปหรือคอนเทนต์': return <Video className="w-3 h-3 mr-1" />;
           default: return <ListTodo className="w-3 h-3 mr-1" />;
         }
