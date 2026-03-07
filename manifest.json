@@ -1,0 +1,15 @@
+{
+  "name": "Work Planning Schedule",
+  "short_name": "WorkPlan",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#0b3d1b",
+  "theme_color": "#0b3d1b",
+  "icons": [
+    {
+      "src": "https://cdn-icons-png.flaticon.com/512/5968/5968517.png",
+      "sizes": "512x512",
+      "type": "image/png"
+    }
+  ]
+}
